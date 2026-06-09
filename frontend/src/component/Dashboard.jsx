@@ -155,7 +155,7 @@ const Dashboard = () => {
 
                         <div className="h-[380px] w-full min-w-0">
                             {stats.chartData && stats.chartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                     <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -220,7 +220,7 @@ const Dashboard = () => {
 
                         <div className="h-[300px] w-full relative">
                             {stats.transactionData && stats.transactionData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                     <PieChart>
                                         <Pie
                                             data={stats.transactionData}

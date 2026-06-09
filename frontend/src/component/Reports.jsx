@@ -79,7 +79,7 @@ export default function Reports() {
             </div>
             <div style={{ width: '100%', height: 340 }}>
               {stats.categoryData && stats.categoryData.length > 0 ? (
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <BarChart data={stats.categoryData.slice(0, 8)}>
                     <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} />
                     <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
@@ -115,7 +115,7 @@ export default function Reports() {
             </div>
             <div style={{ width: '100%', height: 340 }}>
               {stats.categoryData && stats.categoryData.length > 0 ? (
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <PieChart>
                     <Pie
                       data={stats.categoryData.slice(0, 6)}
