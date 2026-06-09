@@ -65,6 +65,7 @@ const AuthSlice = createSlice({
     name: "Auth",
     initialState: {
         auth: null,
+        user: null,
         isLoggedIn: false,
         isLoading: false,
         Error: null
@@ -72,8 +73,26 @@ const AuthSlice = createSlice({
     reducers: {
         handleLogout: (state) => {
             state.auth = null;
+            state.user = null;
             state.isLoggedIn = false;
             localStorage.removeItem('token');
+        },
+        updateProfile: (state, action) => {
+            const updated = action.payload;
+            if (state.user) {
+                state.user = {
+                    ...state.user,
+                    ...updated
+                };
+            } else {
+                state.user = updated;
+            }
+            if (state.auth) {
+                state.auth = {
+                    ...state.auth,
+                    ...updated
+                };
+            }
         }
     },
     extraReducers: (builder) => {
@@ -133,5 +152,5 @@ const AuthSlice = createSlice({
     }
 });
 
-export const { handleLogout } = AuthSlice.actions;
+export const { handleLogout, updateProfile } = AuthSlice.actions;
 export default AuthSlice.reducer;

@@ -95,15 +95,15 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-slate-400 text-sm">
                 <Mail size={16} className="mt-0.5 text-blue-400 flex-shrink-0" />
-                <span>support@expenseapp.com</span>
+                <span>crushgokul1455@gmail.com</span>
               </li>
               <li className="flex items-start gap-3 text-slate-400 text-sm">
                 <Phone size={16} className="mt-0.5 text-blue-400 flex-shrink-0" />
-                <span>+91 98765 43210</span>
+                <span>+91 9944351752</span>
               </li>
               <li className="flex items-start gap-3 text-slate-400 text-sm">
                 <MapPin size={16} className="mt-0.5 text-blue-400 flex-shrink-0" />
-                <span>123 Finance Street,<br />Budget City, India</span>
+                <span>123 Basavanagudi,<br />Bangalore, India</span>
               </li>
             </ul>
           </div>

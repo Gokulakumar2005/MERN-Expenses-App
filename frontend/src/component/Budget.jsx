@@ -10,10 +10,12 @@ export default function Budget() {
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ category: '', limit: '' });
+  const [editingBudgetId, setEditingBudgetId] = useState(null);
+  const [editSpent, setEditSpent] = useState('');
 
   const addBudget = () => {
     if (formData.category && formData.limit) {
-      setBudgets([...budgets, { id: Date.now(), category: formData.category, limit: parseInt(formData.limit), spent: 0, icon: '📊' }]);
+      setBudgets([...budgets, { id: Date.now(), category: formData.category, limit: parseInt(formData.limit, 10), spent: 0, icon: '📊' }]);
       setFormData({ category: '', limit: '' });
       setShowForm(false);
     }
@@ -21,7 +23,31 @@ export default function Budget() {
 
   const deleteBudget = (id) => {
     setBudgets(budgets.filter(b => b.id !== id));
+    if (editingBudgetId === id) {
+      setEditingBudgetId(null);
+      setEditSpent('');
+    }
   };
+
+  const startEditing = (budget) => {
+    setEditingBudgetId(budget.id);
+    setEditSpent(budget.spent.toString());
+    setShowForm(false);
+  };
+
+  const cancelEdit = () => {
+    setEditingBudgetId(null);
+    setEditSpent('');
+  };
+
+  const saveEdit = (id) => {
+    const amount = parseInt(editSpent, 10);
+    if (Number.isNaN(amount) || amount < 0) return;
+    setBudgets(budgets.map(b => (b.id === id ? { ...b, spent: amount } : b)));
+    setEditingBudgetId(null);
+    setEditSpent('');
+  };
+
 
   const totalLimit = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
@@ -142,7 +168,7 @@ export default function Budget() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="p-2 hover:bg-slate-100 rounded-xl transition-all">
+                      <button onClick={() => startEditing(budget)} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
                         <Edit2 size={16} className="text-slate-400" />
                       </button>
                       <button onClick={() => deleteBudget(budget.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all">
@@ -158,6 +184,35 @@ export default function Budget() {
                         {percentage}%
                       </span>
                     </div>
+                    {editingBudgetId === budget.id && (
+                      <div className="bg-slate-50 rounded-3xl p-4 border border-slate-200 mt-4">
+                        <p className="text-slate-500 text-sm mb-3">Edit spent amount for <span className="font-semibold text-slate-900">{budget.category}</span></p>
+                        <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] items-end">
+                          <label className="space-y-2">
+                            <span className="text-slate-500 text-xs uppercase tracking-widest">Spent Amount</span>
+                            <input
+                              type="number"
+                              value={editSpent}
+                              onChange={(e) => setEditSpent(e.target.value)}
+                              className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                            />
+                          </label>
+                          <button
+                            onClick={() => saveEdit(budget.id)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-2xl transition-all"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-3 rounded-2xl transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
                       <div
                         className={`h-full transition-all rounded-full ${

@@ -1,8 +1,25 @@
-import { useSelector } from "react-redux";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Mail, User, Phone, MapPin, Calendar, Shield, LogOut } from "lucide-react";
+import { updateProfile } from "../slices/authSlices";
+import { toast } from "react-toastify";
 
 export default function Profile() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.Auth);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ userName: "", email: "", phoneNumber: "", address: "" });
+
+  useEffect(() => {
+    if (user) {
+      setEditData({
+        userName: user.userName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+        address: user.address || ""
+      });
+    }
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -123,7 +140,10 @@ export default function Profile() {
 
             {/* Action Buttons */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all hover:-translate-y-0.5">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all hover:-translate-y-0.5"
+              >
                 Edit Profile
               </button>
               <button
@@ -133,6 +153,97 @@ export default function Profile() {
                 <LogOut size={20} /> Sign Out
               </button>
             </div>
+
+            {isEditing && (
+              <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm mt-8">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900">Edit Profile</h3>
+                    <p className="text-slate-500 mt-1">Update your name, email, and phone number.</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditData({
+                        userName: user?.userName || "",
+                        email: user?.email || "",
+                        phoneNumber: user?.phoneNumber || "",
+                        address: user?.address || ""
+                      });
+                    }}
+                    className="text-slate-500 hover:text-slate-900 font-semibold"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-slate-500 uppercase text-xs tracking-widest">Full Name</span>
+                    <input
+                      value={editData.userName}
+                      onChange={(e) => setEditData({ ...editData, userName: e.target.value })}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                    />
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-slate-500 uppercase text-xs tracking-widest">Email Address</span>
+                    <input
+                      type="email"
+                      value={editData.email}
+                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                    />
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-slate-500 uppercase text-xs tracking-widest">Phone Number</span>
+                    <input
+                      type="tel"
+                      value={editData.phoneNumber}
+                      onChange={(e) => setEditData({ ...editData, phoneNumber: e.target.value })}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                    />
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-slate-500 uppercase text-xs tracking-widest">Address</span>
+                    <input
+                      value={editData.address}
+                      onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => {
+                      dispatch(updateProfile(editData));
+                      setIsEditing(false);
+                      toast.success('Profile updated successfully');
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditData({
+                        userName: user?.userName || "",
+                        email: user?.email || "",
+                        phoneNumber: user?.phoneNumber || "",
+                        address: user?.address || ""
+                      });
+                    }}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 rounded-2xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white p-16 rounded-[40px] border border-slate-100 shadow-sm text-center">
