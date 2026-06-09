@@ -1,19 +1,33 @@
-import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import Register from "./component/register";
 import Login from "./component/Login";
+import Home from "./component/Home";
+import About from "./component/About";
+import Contact from "./component/Contact";
+import Services from "./component/Services";
 import AddExpenseComponent from "./component/AddExpense";
 import ExpenseListComponent from "./component/ExpenseList";
 import Dashboard from "./component/Dashboard";
 import { UserAccount } from "./slices/authSlices";
 import { useSelector, useDispatch } from "react-redux";
 import { handleLogout } from "./slices/authSlices";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import Profile from "./component/Profile";
+import Reports from "./component/Reports";
+import Budget from "./component/Budget";
+import Receipts from "./component/Receipts";
+import Help from "./component/Help";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Footer from "./component/Footer";
 
 
 function App() {
   const { isLoggedIn } = useSelector((state) => state.Auth)
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -21,6 +35,11 @@ function App() {
       dispatch(UserAccount());
     }
   }, [dispatch]);
+
+  useEffect(() => {
+    // close mobile menu when route changes
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const onLogout = () => {
     dispatch(handleLogout());
@@ -50,9 +69,21 @@ function App() {
             </span>
           </Link>
 
-          <nav>
-            <ul className="flex items-center gap-1 sm:gap-4 font-bold text-sm">
-              {isLoggedIn ? (
+          <nav className="relative">
+            <button
+              className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-slate-600 hover:bg-slate-100"
+              aria-controls="primary-navigation"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((s) => !s)}
+            >
+              <span className="sr-only">Toggle navigation</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+              </svg>
+            </button>
+
+            <ul id="primary-navigation" className={`${mobileOpen ? 'block' : 'hidden'} sm:flex items-center gap-1 sm:gap-4 font-bold text-sm`}> 
+          {isLoggedIn ? (
                 <>
                   <li>
                     <Link
@@ -78,6 +109,18 @@ function App() {
                       History
                     </Link>
                   </li>
+                  <li>
+                    <Link to="/reports" className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">Reports</Link>
+                  </li>
+                  <li>
+                    <Link to="/budget" className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">Budget</Link>
+                  </li>
+                  <li>
+                    <Link to="/receipts" className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">Receipts</Link>
+                  </li>
+                  <li>
+                    <Link to="/profile" className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">Profile</Link>
+                  </li>
                   <li className="ml-2">
                     <button
                       onClick={onLogout}
@@ -89,6 +132,38 @@ function App() {
                 </>
               ) : (
                 <>
+                 <li>
+                <Link
+                  to="/"
+                  className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                >
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/about"
+                  className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                >
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/services"
+                  className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                >
+                  Services
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contact"
+                  className="px-4 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                >
+                  Contact
+                </Link>
+              </li>
                   <li><Link to="/login" className="px-4 py-2 text-slate-500 hover:text-blue-600 transition-colors">Login</Link></li>
                   <li><Link to="/register" className="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95">Register</Link></li>
                 </>
@@ -100,14 +175,25 @@ function App() {
 
       <main className="py-4">
         <Routes>
-          <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />} />
           <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/add-expense" element={isLoggedIn ? <AddExpenseComponent /> : <Navigate to="/login" />} />
           <Route path="/my-expenses" element={isLoggedIn ? <ExpenseListComponent /> : <Navigate to="/login" />} />
+              <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
+              <Route path="/reports" element={isLoggedIn ? <Reports /> : <Navigate to="/login" />} />
+              <Route path="/budget" element={isLoggedIn ? <Budget /> : <Navigate to="/login" />} />
+              <Route path="/receipts" element={isLoggedIn ? <Receipts /> : <Navigate to="/login" />} />
+              <Route path="/help" element={<Help />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+      <Footer />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable pauseOnFocusLoss />
     </div>
   )
 }

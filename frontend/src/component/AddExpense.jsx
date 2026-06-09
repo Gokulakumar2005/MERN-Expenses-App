@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AddExpense, ListExpenses, RemoveExpense, UpdateExpense } from "../slices/expenseSlices";
 import Tesseract from "tesseract.js";
+import { toast } from 'react-toastify';
 import { Trash2, Edit3, Plus, Camera, Loader2, IndianRupee, Calendar, Tag, AlertCircle } from "lucide-react";
 
 const AddExpenseComponent = () => {
     const dispatch = useDispatch();
-    const { expenses, isLoading } = useSelector((state) => state.Expense);
+    const { expenses, isLoading, pagination } = useSelector((state) => state.Expense);
 
+    const [page, setPage] = useState(1);
     const [formData, setFormData] = useState({
         title: "",
         date: "",
@@ -17,6 +19,7 @@ const AddExpenseComponent = () => {
     });
     const [file, setFile] = useState(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
 
@@ -25,8 +28,8 @@ const AddExpenseComponent = () => {
     ];
 
     useEffect(() => {
-        dispatch(ListExpenses({ page: 1, limit: 100 })); // Fetch more for this page's list
-    }, [dispatch]);
+        dispatch(ListExpenses({ page, limit: 15 }));
+    }, [dispatch, page]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -93,7 +96,7 @@ const AddExpenseComponent = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
         data.append("title", formData.title);
@@ -105,16 +108,22 @@ const AddExpenseComponent = () => {
             data.append("receipt", file);
         }
 
-        if (isEditing) {
-            dispatch(UpdateExpense({ id: editId, formData: data }));
-            setIsEditing(false);
-            setEditId(null);
-        } else {
-            dispatch(AddExpense(data));
+        setIsSubmitting(true);
+        try {
+            if (isEditing) {
+                await dispatch(UpdateExpense({ id: editId, formData: data })).unwrap();
+                setIsEditing(false);
+                setEditId(null);
+            } else {
+                await dispatch(AddExpense(data)).unwrap();
+            }
+            setFormData({ title: "", date: "", amount: "", description: "", category: "Other" });
+            setFile(null);
+        } catch (err) {
+            toast.error(err || "Unable to save expense. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setFormData({ title: "", date: "", amount: "", description: "", category: "Other" });
-        setFile(null);
     };
 
     const handleEdit = (expense) => {
@@ -131,9 +140,49 @@ const AddExpenseComponent = () => {
     };
 
     const handleRemove = (id) => {
-        if (window.confirm("Are you sure you want to delete this expense?")) {
-            dispatch(RemoveExpense(id));
-        }
+        let toastId;
+
+        const confirmContent = ({ closeToast }) => (
+            <div className="space-y-3 text-slate-900">
+                <p className="text-sm font-medium">Are you sure you want to delete this expense?</p>
+                <div className="flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            dispatch(RemoveExpense(id))
+                                .unwrap()
+                                .then(() => {
+                                    toast.success("Expense deleted successfully");
+                                })
+                                .catch((err) => {
+                                    toast.error(err || "Unable to delete expense.");
+                                })
+                                .finally(() => {
+                                    toast.dismiss(toastId);
+                                });
+                        }}
+                        className="rounded-full bg-red-500 px-4 py-2 text-xs font-semibold text-white hover:bg-red-600"
+                    >
+                        Yes
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => toast.dismiss(toastId)}
+                        className="rounded-full bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-300"
+                    >
+                        No
+                    </button>
+                </div>
+            </div>
+        );
+
+        toastId = toast.info(confirmContent, {
+            autoClose: false,
+            closeOnClick: false,
+            closeButton: false,
+            position: "top-right",
+            toastId: `delete-confirm-${id}`
+        });
     };
 
     const cancelEdit = () => {
@@ -279,13 +328,14 @@ const AddExpenseComponent = () => {
 
                             <button
                                 type="submit"
-                                className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transform hover:-translate-y-1 transition active:scale-95 ${isEditing
+                                disabled={isSubmitting || isScanning}
+                                className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transform transition active:scale-95 ${isSubmitting || isScanning ? 'opacity-60 cursor-not-allowed' : 'hover:-translate-y-1'} ${isEditing
                                     ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white"
                                     : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                                     }`}
                             >
-                                {isEditing ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                                {isEditing ? "Update Expense" : "Save Expense"}
+                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditing ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                {isSubmitting ? "Processing..." : isEditing ? "Update Expense" : "Save Expense"}
                             </button>
                         </form>
                     </div>
@@ -367,6 +417,30 @@ const AddExpenseComponent = () => {
                             </table>
                         </div>
                     </div>
+
+                    {pagination.totalPages >= 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 bg-slate-950/90 border-t border-slate-800 text-slate-300">
+                            <button
+                                type="button"
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={page === 1}
+                                className="rounded-full px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Previous
+                            </button>
+                            <span className="text-sm">
+                                Page {page} of {pagination.totalPages}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                                disabled={page === pagination.totalPages}
+                                className="rounded-full px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -8,8 +8,6 @@ ExpenseCtrl.create = async (req, res) => {
 
         if (req.file) {
             console.log("File Uploaded Successfully:", JSON.stringify(req.file, null, 2));
-        } else {
-            console.log("WARNING: No file received in req.file. Check Cloudinary credentials.");
         }
 
         const { title, date, amount, description, category } = req.body;
@@ -38,20 +36,30 @@ ExpenseCtrl.create = async (req, res) => {
 ExpenseCtrl.list = async (req, res) => {
     try {
         const userId = req.user.id;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 5;
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.max(parseInt(req.query.limit) || 15, 1);
         const skip = (page - 1) * limit;
+        const search = req.query.search ? req.query.search.trim() : "";
 
-        const expenses = await ExpenseModel.find({ userId })
+        const filters = { userId };
+        if (search) {
+            const searchRegex = new RegExp(search, "i");
+            filters.$or = [
+                { title: searchRegex },
+                { description: searchRegex },
+                { category: searchRegex }
+            ];
+        }
+
+        const totalItems = await ExpenseModel.countDocuments(filters);
+        const expenses = await ExpenseModel.find(filters)
             .sort({ date: -1 })
             .skip(skip)
             .limit(limit);
 
-        const totalItems = await ExpenseModel.countDocuments({ userId });
-
         res.json({
             expenses,
-            totalPages: Math.ceil(totalItems / limit),
+            totalPages: Math.max(Math.ceil(totalItems / limit), 1),
             currentPage: page,
             totalItems
         });
@@ -144,7 +152,7 @@ ExpenseCtrl.update = async (req, res) => {
         const expense = await ExpenseModel.findOneAndUpdate(
             { _id: id, userId },
             { $set: updateData },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!expense) {

@@ -30,8 +30,9 @@ export const AddExpense = createAsyncThunk(
 
 export const ListExpenses = createAsyncThunk('Expense/ListExpenses', async (params = {}, { rejectWithValue }) => {
     try {
-        const { page = 1, limit = 5 } = params;
-        const response = await axios.get(`/expense/list?page=${page}&limit=${limit}`);
+        const { page = 1, limit = 15, search = "" } = params;
+        const query = new URLSearchParams({ page, limit, search }).toString();
+        const response = await axios.get(`/expense/list?${query}`);
         return response.data;
     } catch (err) {
         const msg = err.response?.data?.error || "Failed to fetch expenses";

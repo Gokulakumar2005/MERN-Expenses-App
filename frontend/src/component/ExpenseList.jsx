@@ -1,76 +1,6 @@
-// import React, { useEffect, useMemo } from "react";
-// import { useDispatch, useSelector } from "react-redux";
-// import { ListExpenses } from "../slices/expenseSlices";
 
-// const ExpenseListComponent = () => {
-//     const dispatch = useDispatch();
-//     const { expenses, isLoading } = useSelector((state) => state.Expense);
 
-//     useEffect(() => {
-//         dispatch(ListExpenses());
-//     }, [dispatch]);
-
-//     const totalExpenses = useMemo(() => {
-//         return expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-//     }, [expenses]);
-
-//     if (isLoading) return <p className="text-center mt-10">Loading expenses...</p>;
-
-//     return (
-//         <div className="max-w-4xl mx-auto mt-10 p-6">
-//             <div className="flex justify-between items-center mb-6">
-//                 <h2 className="text-3xl font-bold text-gray-800">My Expenses</h2>
-//                 <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold">
-//                     Total: ₹{totalExpenses.toFixed(2)}
-//                 </div>
-//             </div>
-
-//             {expenses.length === 0 ? (
-//                 <p className="text-center text-gray-500 italic">No expenses added yet.</p>
-//             ) : (
-//                 <div className="overflow-x-auto bg-white rounded-lg shadow">
-//                     <table className="min-w-full leading-normal">
-//                         <thead>
-//                             <tr>
-//                                 <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Title</th>
-//                                 <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-//                                 <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
-//                                 <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Receipt</th>
-//                             </tr>
-//                         </thead>
-//                         <tbody>
-//                             {expenses.map((expense) => (
-//                                 <tr key={expense._id}>
-//                                     <td className="px-5 py-5 border-b border-gray-200 text-sm">
-//                                         <p className="text-gray-900 whitespace-no-wrap font-medium">{expense.title}</p>
-//                                         <p className="text-gray-500 text-xs italic">{expense.description}</p>
-//                                     </td>
-//                                     <td className="px-5 py-5 border-b border-gray-200 text-sm">
-//                                         <p className="text-gray-900 whitespace-no-wrap">{new Date(expense.date).toLocaleDateString()}</p>
-//                                     </td>
-//                                     <td className="px-5 py-5 border-b border-gray-200 text-sm">
-//                                         <p className="text-gray-900 whitespace-no-wrap font-bold text-red-600">₹{expense.amount}</p>
-//                                     </td>
-//                                     <td className="px-5 py-5 border-b border-gray-200 text-sm">
-//                                         {expense.receiptUrl ? (
-//                                             <a href={expense.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-800 underline">View</a>
-//                                         ) : (
-//                                             <span className="text-gray-400">N/A</span>
-//                                         )}
-//                                     </td>
-//                                 </tr>
-//                             ))}
-//                         </tbody>
-//                     </table>
-//                 </div>
-//             )}
-//         </div>
-//     );
-// };
-
-// export default ExpenseListComponent;
-
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ListExpenses } from "../slices/expenseSlices";
 import {
@@ -88,11 +18,14 @@ import { Link } from "react-router-dom";
 
 const ExpenseListComponent = () => {
     const dispatch = useDispatch();
-    const { expenses, isLoading } = useSelector((state) => state.Expense);
+    const { expenses, isLoading, pagination } = useSelector((state) => state.Expense);
+    const [page, setPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        dispatch(ListExpenses());
-    }, [dispatch]);
+        dispatch(ListExpenses({ page, limit: 15, search: searchTerm }));
+    }, [dispatch, page, searchTerm]);
 
     const totalExpenses = useMemo(() => {
         return expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
@@ -160,11 +93,31 @@ const ExpenseListComponent = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
                                 type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search expenses..."
                                 className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400 transition-all"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        setPage(1);
+                                        setSearchTerm(searchQuery);
+                                    }
+                                }}
                             />
                         </div>
                         <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPage(1);
+                                    setSearchTerm(searchQuery);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-600 rounded-1.5xl border border-slate-100 hover:bg-slate-100 transition-all text-sm font-bold"
+                            >
+                                <Search size={16} strokeWidth={2.5} />
+                                Search
+                            </button>
                             <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-600 rounded-1.5xl border border-slate-100 hover:bg-slate-100 transition-all text-sm font-bold">
                                 <Filter size={16} strokeWidth={2.5} />
                                 Filters
@@ -264,6 +217,28 @@ const ExpenseListComponent = () => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {pagination.totalPages >= 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-100">
+                            <button
+                                type="button"
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={page === 1}
+                                className="rounded-full px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Previous
+                            </button>
+                            <span className="text-sm text-slate-500">Page {page} of {pagination.totalPages}</span>
+                            <button
+                                type="button"
+                                onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                                disabled={page === pagination.totalPages}
+                                className="rounded-full px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Next
+                            </button>
                         </div>
                     )}
                 </div>
