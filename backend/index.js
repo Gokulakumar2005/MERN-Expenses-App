@@ -7,11 +7,15 @@ import UserCtrl from "./app/controllers/Ctrl.js";
 import ExpenseCtrl from "./app/controllers/ExpenseCtrl.js";
 import { authenticateUser } from "./app/middlewares/auth.js";
 import { upload } from "./config/cloudinary.js";
-const port = process.env.PORT
+const port = process.env.PORT || 8080;
 const app = express();
 configureDB();
 app.use(express.json());
 app.use(cors());
+
+app.get("/", (req, res) => {
+    res.json({ status: "ok", message: "Expense Tracker Backend API is running" });
+});
 
 
 
