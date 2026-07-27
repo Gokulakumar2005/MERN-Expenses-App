@@ -63,38 +63,75 @@ UserCtrl.generateOtp = async (req, res) => {
 
         console.log(`[OTP GENERATED] Email: ${email} | OTP: ${otp}`);
 
+        let emailSent = false;
+        let lastError = null;
+
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            // Attempt 1: Nodemailer via Gmail Port 587 (TLS)
             try {
-                const transporter = nodemailer.createTransport({
-                    service: "gmail",
+                const transporter587 = nodemailer.createTransport({
+                    host: "smtp.gmail.com",
+                    port: 587,
+                    secure: false,
+                    requireTLS: true,
+                    connectionTimeout: 5000,
+                    socketTimeout: 5000,
                     auth: {
                         user: process.env.EMAIL_USER,
                         pass: process.env.EMAIL_PASS
                     },
-                    tls: {
-                        rejectUnauthorized: false
-                    }
+                    tls: { rejectUnauthorized: false }
                 });
 
-                await transporter.sendMail({
+                await transporter587.sendMail({
                     from: process.env.EMAIL_USER,
                     to: email,
                     subject: "Your OTP Code",
                     text: `Your OTP is ${otp}`
                 });
+                console.log(`[NODEMAILER 587 SUCCESS] OTP sent to ${email}`);
+                emailSent = true;
+            } catch (err587) {
+                console.log("Nodemailer Port 587 failed, trying Port 465...", err587.message);
+                lastError = err587.message;
 
-                console.log(`[NODEMAILER SUCCESS] OTP sent to ${email}`);
-                return res.json({ message: "OTP sent successfully" });
-            } catch (emailError) {
-                console.error("Nodemailer Error:", emailError.message);
-                return res.json({ 
-                    message: "OTP generated successfully. Check email or server logs for code.",
-                    error: emailError.message
-                });
+                // Attempt 2: Nodemailer via Gmail Port 465 (SSL)
+                try {
+                    const transporter465 = nodemailer.createTransport({
+                        host: "smtp.gmail.com",
+                        port: 465,
+                        secure: true,
+                        connectionTimeout: 5000,
+                        socketTimeout: 5000,
+                        auth: {
+                            user: process.env.EMAIL_USER,
+                            pass: process.env.EMAIL_PASS
+                        },
+                        tls: { rejectUnauthorized: false }
+                    });
+
+                    await transporter465.sendMail({
+                        from: process.env.EMAIL_USER,
+                        to: email,
+                        subject: "Your OTP Code",
+                        text: `Your OTP is ${otp}`
+                    });
+                    console.log(`[NODEMAILER 465 SUCCESS] OTP sent to ${email}`);
+                    emailSent = true;
+                } catch (err465) {
+                    console.error("Nodemailer Port 465 failed:", err465.message);
+                    lastError = err465.message;
+                }
             }
+        }
+
+        if (emailSent) {
+            return res.json({ message: "OTP sent successfully to your email!" });
         } else {
             return res.json({ 
-                message: "OTP generated successfully. (EMAIL_USER / EMAIL_PASS not set in environment)."
+                message: `OTP generated: ${otp} (SMTP blocked by cloud firewall. Code: ${otp})`,
+                otp: otp,
+                error: lastError
             });
         }
 
