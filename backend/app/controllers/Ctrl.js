@@ -66,18 +66,13 @@ UserCtrl.generateOtp = async (req, res) => {
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             try {
                 const transporter = nodemailer.createTransport({
-                    host: "smtp.gmail.com",
-                    port: 465,
-                    secure: true,
-                    dns: {
-                        family: 4
-                    },
-                    connectionTimeout: 5000,
-                    greetingTimeout: 5000,
-                    socketTimeout: 5000,
+                    service: "gmail",
                     auth: {
                         user: process.env.EMAIL_USER,
                         pass: process.env.EMAIL_PASS
+                    },
+                    tls: {
+                        rejectUnauthorized: false
                     }
                 });
 
@@ -88,16 +83,18 @@ UserCtrl.generateOtp = async (req, res) => {
                     text: `Your OTP is ${otp}`
                 });
 
+                console.log(`[NODEMAILER SUCCESS] OTP sent to ${email}`);
                 return res.json({ message: "OTP sent successfully" });
             } catch (emailError) {
-                console.error("Nodemailer Email Delivery Error:", emailError.message);
+                console.error("Nodemailer Error:", emailError.message);
                 return res.json({ 
-                    message: "OTP generated successfully. (Cloud SMTP connection timed out; check Render logs for the OTP code)."
+                    message: "OTP generated successfully. Check email or server logs for code.",
+                    error: emailError.message
                 });
             }
         } else {
             return res.json({ 
-                message: "OTP generated successfully. (EMAIL_USER / EMAIL_PASS not set; check Render logs for the OTP code)."
+                message: "OTP generated successfully. (EMAIL_USER / EMAIL_PASS not set in environment)."
             });
         }
 
