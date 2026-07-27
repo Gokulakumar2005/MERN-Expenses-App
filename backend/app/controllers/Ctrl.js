@@ -61,21 +61,19 @@ UserCtrl.generateOtp = async (req, res) => {
         user.otpCreatedAt = new Date();
         await user.save();
 
-        const emailUser = process.env.EMAIL_USER || "crushgokul1455@gmail.com";
-        const emailPass = process.env.EMAIL_PASS || "emoweootsxwaviib";
-
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 465,
             secure: true,
+            family: 4,
             auth: {
-                user: emailUser,
-                pass: emailPass
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         });
 
         await transporter.sendMail({
-            from: emailUser,
+            from: process.env.EMAIL_USER,
             to: email,
             subject: "Your OTP Code",
             text: `Your OTP is ${otp}`
@@ -111,8 +109,7 @@ UserCtrl.verifyOtp = async (req, res) => {
         user.otpCreatedAt = undefined;
         await user.save();
 
-        const jwtSecret = process.env.JWT_SECRET || "Gokul@2005";
-        const token = jwt.sign({ id: user._id, email: user.email }, jwtSecret, { expiresIn: '1d' });
+        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ message: "you are loggedIn", token, user });
     } catch (error) {
         console.log(error.message);
@@ -122,7 +119,7 @@ UserCtrl.verifyOtp = async (req, res) => {
 
 UserCtrl.googleLogin = async (req, res) => {
     const { credential } = req.body;
-    const googleClientId = process.env.GOOGLE_CLIENT_ID || "747253058768-kpe5kbhsh58636ekqr0s8vgb2g8o277m.apps.googleusercontent.com";
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
     console.log("Backend GOOGLE_CLIENT_ID:", googleClientId);
     console.log("Request Body:", JSON.stringify(req.body, null, 2));
 
@@ -148,8 +145,7 @@ UserCtrl.googleLogin = async (req, res) => {
             await user.save();
         }
 
-        const jwtSecret = process.env.JWT_SECRET || "Gokul@2005";
-        const token = jwt.sign({ id: user._id, email: user.email }, jwtSecret, { expiresIn: '1d' });
+        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ message: "Login Successful", token, user });
     } catch (error) {
         console.error(error);

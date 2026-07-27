@@ -1,7 +1,10 @@
 import "dotenv/config";
+import dns from "node:dns";
 import cors from "cors";
 import express from "express";
 import configureDB from "./config/db.js";
+
+dns.setDefaultResultOrder("ipv4first");
 
 import UserCtrl from "./app/controllers/Ctrl.js";
 import ExpenseCtrl from "./app/controllers/ExpenseCtrl.js";
