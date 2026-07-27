@@ -61,28 +61,46 @@ UserCtrl.generateOtp = async (req, res) => {
         user.otpCreatedAt = new Date();
         await user.save();
 
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
-            family: 4,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+        console.log(`[OTP GENERATED] Email: ${email} | OTP: ${otp}`);
+
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            try {
+                const transporter = nodemailer.createTransport({
+                    host: "smtp.gmail.com",
+                    port: 465,
+                    secure: true,
+                    family: 4,
+                    connectionTimeout: 5000,
+                    greetingTimeout: 5000,
+                    socketTimeout: 5000,
+                    auth: {
+                        user: process.env.EMAIL_USER,
+                        pass: process.env.EMAIL_PASS
+                    }
+                });
+
+                await transporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: "Your OTP Code",
+                    text: `Your OTP is ${otp}`
+                });
+
+                return res.json({ message: "OTP sent successfully" });
+            } catch (emailError) {
+                console.error("Nodemailer Email Delivery Error:", emailError.message);
+                return res.json({ 
+                    message: "OTP generated successfully. (Cloud SMTP connection timed out; check Render logs for the OTP code)."
+                });
             }
-        });
-
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Your OTP Code",
-            text: `Your OTP is ${otp}`
-        });
-
-        res.json({ message: "OTP sent successfully" });
+        } else {
+            return res.json({ 
+                message: "OTP generated successfully. (EMAIL_USER / EMAIL_PASS not set; check Render logs for the OTP code)."
+            });
+        }
 
     } catch (error) {
-        console.error(error);
+        console.error("Generate OTP Error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
